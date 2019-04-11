@@ -3,18 +3,26 @@ from sklearn.model_selection import train_test_split
 import pandas as pd
 import pprint
 
+from ada_boost import boost
+
 def main():
+    # Call the preprocesser to get the data
     X_train, X_test, y_train, y_test = preprocess()
+
+    # Call the nomral random forest (ensemble method)
     acc = trainForest(X_train, y_train, X_test, y_test)
     print('The accuracy of the random forest method for our wine data is: ', acc)
+
+    # Now we are goint to call our implementation of the ada Boost
+    boost(X_train, y_train, X_test, y_test, 1)
 
 '''
     This method will Build a random forest classifier form the random forest library   
 '''
 def trainForest(training_data, training_target, test_data, test_target):
     # Simple random forest for comparison
-    random_forest_classifier = ensemble.RandomForestClassifier(max_depth=1)
-    random_forest_classifier.fit(training_data, training_target)
+    random_forest_classifier = ensemble.RandomForestClassifier(n_estimators=10, max_depth=1, random_state = 42)
+    random_forest_classifier.fit(training_data, training_target.values.ravel())
 
     # Print metrics
     accuracy = random_forest_classifier.score(test_data, test_target)
@@ -58,4 +66,3 @@ def preprocess():
 
 if __name__ == '__main__':
     main()
-        
