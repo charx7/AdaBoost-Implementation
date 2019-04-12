@@ -14,7 +14,7 @@ def main():
     print('The accuracy of the random forest method for our wine data is: ', acc)
 
     # Now we are goint to call our implementation of the ada Boost
-    boost(X_train, y_train, X_test, y_test, 1)
+    boost(X_train, y_train, X_test, y_test, 11)
 
 '''
     This method will Build a random forest classifier form the random forest library   
@@ -25,6 +25,8 @@ def trainForest(training_data, training_target, test_data, test_target):
     random_forest_classifier.fit(training_data, training_target.values.ravel())
 
     # Print metrics
+    #print(random_forest_classifier.predict(test_data))
+    #print(test_target.values.ravel())
     accuracy = random_forest_classifier.score(test_data, test_target)
     return accuracy
 

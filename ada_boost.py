@@ -36,6 +36,11 @@ class classifier():
         predictions = self.clf.predict(self.X.values)
         self.predictions = predictions
 
+    # the predict method (on test data) of the current classifier
+    def predict(self):
+        testPredictions = self.clf.predict(self.testX.values)
+        return testPredictions
+
     # This method will compute the error of the classifier alpha_{m}
     def computeError(self):
         numSamples = self.X.shape[0]
@@ -49,8 +54,15 @@ class classifier():
             if currentPrediction != currentRealValues:
                 errSum = errSum + currentWeight
         
+        errSum = errSum / np.sum(self.weights)
+        print('The total error for this clf is: ', errSum)
         # Calculate clf error
-        alpha_m = math.log((1-errSum) / errSum)
+        small_perturbation = .00000000001 #small perturbation so that the alpha_m wont give math errors
+        alpha_m = math.log((1-errSum + small_perturbation) / errSum) + math.log(3-1)
+        # Check if the voting is <0 ie, the current weak classifier is worst than random guessing so no 
+        # vote will be given
+        #if alpha_m < 0:
+        #    alpha_m = 0 
         self.alpha_m = alpha_m
         #print('the sum is: ', errSum)
         print('The voting amount of alpha_m of the current clf is : ', alpha_m)
@@ -79,7 +91,7 @@ class classifier():
         # Sanity check for the sum
         #print(np.sum(normalized_new_weights))
         self.nextWeights = normalized_new_weights
-
+        print('The next weights are: (only showing top 3) \n', normalized_new_weights[:3], '\n')
     # The fit method for the current classifier
     def fit(self):
         # Fit the rf to the current sampled data
@@ -127,9 +139,41 @@ def boost(training_data, training_target, test_data, test_target, boostingSteps)
         # Add the new classifiers to the classifiers vector
         ensembles_vector.append(current_clf)
     
-    print(ensembles_vector)
+    # Predict using the majority vote function
+    predArray = []
+    for clsf in ensembles_vector:
+        
+        classifierWeight = clsf.alpha_m
+        predictionVector = clsf.predict()
+        
+        # Argmax func for classes vote
+        votesStack = np.empty((0,3), float)
+        votes = np.zeros(3)
+        for predictedValue in predictionVector:
+            for label in np.unique(predictionVector):
+                if predictedValue == label:
+                    votes[label] = classifierWeight
+            # Stack the votes array
+            votesStack = np.vstack((votesStack, votes))
+            votes = np.zeros(3)        
 
+        predArray.append(votesStack)
     
+    # Sum the votes stacked array to get the votes into a single multidim vector
+    votesSum = np.sum(predArray, axis=0)
+    # append the final winners
+    boostedPredictions = []
+    for i in votesSum:
+        boostedPredictions.append(np.argmax(i))
+    print(votesSum)
+    # Evaluate the boostedPredictions vs real values on the test set
+    correctedPreds = 0
+    for i in range(len(boostedPredictions)):
+        if boostedPredictions[i] == test_target.values.ravel()[i]:
+            correctedPreds = correctedPreds + 1
+    
+    print('The amount of corrected predictions is: ', correctedPreds, ' out of ', len(boostedPredictions))
+
 def main():
     print('im main')
 
