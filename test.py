@@ -14,7 +14,14 @@ def main():
     print('The accuracy of the random forest method for our wine data is: ', acc)
 
     # Now we are goint to call our implementation of the ada Boost
-    boost(X_train, y_train, X_test, y_test, 11)
+    max_iters = 27
+    showInfo = False
+    for i in range(max_iters):
+        print('Boosting for {0} Step(s)'.format(i+1))
+        if i+1 == max_iters:
+            showInfo = True 
+        boost(X_train, y_train, X_test, y_test, i+1, showInfo)
+    
 
 '''
     This method will Build a random forest classifier form the random forest library   

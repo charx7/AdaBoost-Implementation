@@ -42,7 +42,7 @@ class classifier():
         return testPredictions
 
     # This method will compute the error of the classifier alpha_{m}
-    def computeError(self):
+    def computeError(self, showInfo):
         numSamples = self.X.shape[0]
         #print(self.predictions)
         #print(self.Y.values.ravel())
@@ -55,7 +55,8 @@ class classifier():
                 errSum = errSum + currentWeight
         
         errSum = errSum / np.sum(self.weights)
-        print('The total error for this clf is: ', errSum)
+        if showInfo:
+            print('The total error for this clf is: ', errSum)
         # Calculate clf error
         small_perturbation = .00000000001 #small perturbation so that the alpha_m wont give math errors
         alpha_m = math.log((1-errSum + small_perturbation) / errSum) + math.log(3-1)
@@ -65,7 +66,8 @@ class classifier():
         #    alpha_m = 0 
         self.alpha_m = alpha_m
         #print('the sum is: ', errSum)
-        print('The voting amount of alpha_m of the current clf is : ', alpha_m)
+        if showInfo:
+            print('The voting amount of alpha_m of the current clf is : ', alpha_m)
         
     # This method will change the weights of the classifier for the next iteration
     def set_next_weights(self):
@@ -91,7 +93,7 @@ class classifier():
         # Sanity check for the sum
         #print(np.sum(normalized_new_weights))
         self.nextWeights = normalized_new_weights
-        print('The next weights are: (only showing top 3) \n', normalized_new_weights[:3], '\n')
+        #print('The next weights are: (only showing top 3) \n', normalized_new_weights[:3], '\n')
     # The fit method for the current classifier
     def fit(self):
         # Fit the rf to the current sampled data
@@ -101,7 +103,7 @@ class classifier():
         #print(self.sampleY.head(5))
         #print(self.sampleX.head(5))
         
-def boost(training_data, training_target, test_data, test_target, boostingSteps):
+def boost(training_data, training_target, test_data, test_target, boostingSteps, showInfo):
     numTrainingSamples = training_data.shape[0]
     # Initialize all weights to be 1/N
     weights = np.ones(numTrainingSamples)
@@ -113,7 +115,7 @@ def boost(training_data, training_target, test_data, test_target, boostingSteps)
         current_clf = classifier(
             training_data,
             training_target,
-            ensemble.RandomForestClassifier(n_estimators=10,max_depth=1, random_state = i+1),
+            ensemble.RandomForestClassifier(n_estimators=10,max_depth=1, random_state = i+42),
             weights,
             test_data,
             test_target
@@ -130,7 +132,7 @@ def boost(training_data, training_target, test_data, test_target, boostingSteps)
         current_clf.fit()
         
         # Compute the error of the classifier
-        current_clf.computeError()
+        current_clf.computeError(showInfo)
 
         # Assign new weights for the next iteration
         current_clf.set_next_weights()
@@ -165,7 +167,7 @@ def boost(training_data, training_target, test_data, test_target, boostingSteps)
     boostedPredictions = []
     for i in votesSum:
         boostedPredictions.append(np.argmax(i))
-    print(votesSum)
+    #print(votesSum)
     # Evaluate the boostedPredictions vs real values on the test set
     correctedPreds = 0
     for i in range(len(boostedPredictions)):
