@@ -1,15 +1,22 @@
 from sklearn import datasets, utils, ensemble
 from sklearn.model_selection import train_test_split
+from sklearn.decomposition import PCA
+from sklearn import preprocessing
+
+import matplotlib 
+import matplotlib.pyplot as plt
+
 import pandas as pd
 import pprint
-
 from ada_boost import boost
 
 def main():
     # Call the preprocesser to get the data
     X_train, X_test, y_train, y_test = preprocess()
+    # PCA of the train data
+    doPCA(X_train, y_train)
 
-    # Call the nomral random forest (ensemble method)
+    # Call the normal random forest (ensemble method)
     acc = trainForest(X_train, y_train, X_test, y_test)
     print('The accuracy of the random forest method for our wine data is: ', acc)
 
@@ -21,7 +28,43 @@ def main():
         if i+1 == max_iters:
             showInfo = True 
         boost(X_train, y_train, X_test, y_test, i+1, showInfo)
+
+def doPCA(X_train, y_train):
+    # Standard Scaler
+    minmax_scale = preprocessing.MinMaxScaler(feature_range=(0, 1)).fit(X_train)
+    X_train_scaled = minmax_scale.transform(X_train)
+
+    # Call the PCA object
+    pca = PCA(n_components=2)
+    X_reduced = pca.fit_transform(X_train_scaled)
+    X_reduced_df = pd.DataFrame(X_reduced, columns=['PC1', 'PC2'])
+    y_train_reset_index = y_train.reset_index()
     
+    pca_df = pd.concat([X_reduced_df, y_train_reset_index], axis=1, ignore_index=True)
+    pca_df.columns = ['PC1', 'PC2', 'nein', 'label']
+    zeroth_index = pca_df['label'] == 2
+    print('The explained variance ratio is: ', pca.explained_variance_ratio_)
+    print('The singular values(eigenvalues) of the pca matrix are: ', pca.singular_values_)
+
+    # Plot the PCA
+    plt.figure(figsize=(10,8))
+    for label,marker,color in zip(
+        range(0,3),('x', 'o', '^'),('blue', 'red', 'green')):
+        current_index = pca_df['label'] == label
+        temp_df = pca_df[current_index]
+        plt.scatter(x = temp_df['PC1'],
+                    y = temp_df['PC2'],
+                    marker = marker,
+                    color = color,
+                    alpha = 0.6,
+                    label='Class {}'.format(label)
+                    )
+    # Labeling
+    plt.xlabel('Principal Component 1')
+    plt.ylabel('Principal Component 2')
+    plt.legend()
+    plt.title('Embeded 2 dimensional PCA representation of wine training data')
+    plt.show()
 
 '''
     This method will Build a random forest classifier form the random forest library   
@@ -48,6 +91,8 @@ def preprocess():
     print('The wine data is loaded into a dict structure with keys:')
     for key in wine_data:
         print(key)
+    # Info display for the wine data
+    print('Wine data info: \n', wine_data.DESCR)
 
     numRows = wine_data.data.shape[0]
     numFeatures = wine_data.data.shape[1]
